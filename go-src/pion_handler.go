@@ -5,7 +5,6 @@ package main
 #include <stdlib.h>
 */
 import "C"
-import "unsafe"
 
 import (
 	"github.com/pion/mediadevices"
@@ -26,7 +25,7 @@ type JSONString []byte
 var peerConnection *webrtc.PeerConnection
 
 //export SpawnConnection
-func SpawnConnection(iceValues JSONString) unsafe.Pointer {
+func SpawnConnection(iceValues JSONString) *C.char {
 	var iceServers []webrtc.ICEServer
 	if err := json.Unmarshal(iceValues, &iceServers); err != nil {
 		panic(err)
@@ -103,7 +102,7 @@ func SpawnConnection(iceValues JSONString) unsafe.Pointer {
 	}
 
 	offerString, err := json.Marshal(offer)
-	cOfferString := C.CBytes(offerString)
+	cOfferString := C.CString(string(offerString))
 	//defer C.free(cOfferString)
 	return cOfferString
 }

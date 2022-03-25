@@ -73,7 +73,7 @@ typedef struct { void *data; GoInt len; GoInt cap; } GoSlice;
 extern "C" {
 #endif
 
-extern void* SpawnConnection(GoSlice iceValues);
+extern char* SpawnConnection(GoSlice iceValues);
 extern GoUint8 SetRemoteDescription(GoSlice remoteDescString);
 
 #ifdef __cplusplus
