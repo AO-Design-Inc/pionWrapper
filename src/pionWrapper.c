@@ -15,7 +15,7 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 
 
 	char* iceServers = malloc(BUFSIZE); 
-	size_t* result = malloc(BUFSIZE);
+	size_t* result = NULL;
 	//not sure what this result is for?
 
 	status = napi_get_value_string_utf8(env, argv[0], iceServers,BUFSIZE,result);
@@ -34,6 +34,7 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 		napi_throw_error(env, NULL, "bad sdpreturned");
 	}
 	free(SDPOffer);
+	free(iceServers);
 	return mySDP;
 }
 
