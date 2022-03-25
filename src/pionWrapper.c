@@ -15,7 +15,7 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 
 
 	char* iceServers = malloc(BUFSIZE); 
-	size_t* result = NULL;
+	size_t* result = malloc(BUFSIZE);
 	//not sure what this result is for?
 
 	status = napi_get_value_string_utf8(env, argv[0], iceServers,BUFSIZE,result);
