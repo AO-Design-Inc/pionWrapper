@@ -4,6 +4,9 @@
   "description": "a wrapper for screensharing using pion",
   "main": "index.js",
   "scripts": {
+    "build-go": "cd go-src && make",
+    "configure": "node-gyp configure",
+    "build": "npm run build-go && node-gyp build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Abhishek Cherath",
