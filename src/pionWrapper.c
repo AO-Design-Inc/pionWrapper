@@ -27,7 +27,7 @@ napi_value CSetRemoteDescription(napi_env env, napi_callback_info info) {
 	bool remoteSetOk = (bool) SetRemoteDescription(remoteSDPGo);
 	napi_value RemoteDescriptionOk;
 	status = napi_get_boolean(env, remoteSetOk, &RemoteDescriptionOk); 
-	if (status == napi_ok) { 
+	if (status != napi_ok) { 
 		napi_throw_error(env, NULL, "bad remote sdp");
 	}
 	return RemoteDescriptionOk;
