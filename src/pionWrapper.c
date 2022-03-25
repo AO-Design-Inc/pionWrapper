@@ -23,7 +23,7 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 		napi_throw_error(env, NULL, "Invalid string passed in as arg");
 	}
 
-	int iceServerLen = strnlen(iceServers, 10000);
+	int iceServerLen = strnlen(iceServers, BUFSIZE);
 	GoSlice iceServersGo = {iceServers, iceServerLen, iceServerLen};
 
 	
