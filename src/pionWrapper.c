@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "../go-src/pionHandler.h"
-#define BUFSIZE 100000
+#define BUFSIZE 10000
 
 napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 	napi_status status;
