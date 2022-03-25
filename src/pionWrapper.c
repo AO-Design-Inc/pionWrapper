@@ -28,7 +28,7 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 
 	
 	char* SDPOffer = SpawnConnection(iceServersGo);
-	napi_value mySDP;
+	napi_value mySDP = malloc(100000);
 	status = napi_create_string_latin1(env, SDPOffer, strlen(SDPOffer), &mySDP);
 	if (status != napi_ok) {
 		napi_throw_error(env, NULL, "bad sdpreturned");
