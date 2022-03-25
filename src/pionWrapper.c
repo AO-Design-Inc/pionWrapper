@@ -15,10 +15,10 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 
 
 	char* iceServers = malloc(BUFSIZE); 
-	size_t* result = NULL;
+	size_t result;
 	//not sure what this result is for?
 
-	status = napi_get_value_string_utf8(env, argv[0], iceServers,BUFSIZE,result);
+	status = napi_get_value_string_utf8(env, argv[0], iceServers,BUFSIZE, &result);
 	if (status != napi_ok) {
 		napi_throw_error(env, NULL, "Invalid string passed in as arg");
 	}
@@ -28,8 +28,8 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 
 	
 	char* SDPOffer = SpawnConnection(iceServersGo);
-	napi_value mySDP = malloc(100000);
-	status = napi_create_string_latin1(env, SDPOffer, strlen(SDPOffer), &mySDP);
+	napi_value mySDP;
+	status = napi_create_string_utf8(env, SDPOffer, NAPI_AUTO_LENGTH, &mySDP);
 	if (status != napi_ok) {
 		napi_throw_error(env, NULL, "bad sdpreturned");
 	}
