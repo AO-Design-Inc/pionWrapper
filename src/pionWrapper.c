@@ -23,12 +23,12 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 		napi_throw_error(env, NULL, "Invalid string passed in as arg");
 	}
 
-	int iceServerLen = strnlen(iceServers, BUFSIZE);
-	GoSlice iceServersGo = {iceServers, iceServerLen, iceServerLen};
+	result += 1;
+	GoSlice iceServersGo = {iceServers, result, result};
 
 	
 	char* SDPOffer = malloc(BUFSIZE);
-	SDPOffer = SpawnConnection(iceServersGo);
+	SDPOffer = strcat(SpawnConnection(iceServersGo),"\0");
 	napi_value mySDP;
 	status = napi_create_string_utf8(env, SDPOffer, NAPI_AUTO_LENGTH, &mySDP);
 	if (status != napi_ok) {
@@ -44,7 +44,7 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 napi_value Init(napi_env env, napi_value exports) {
 	napi_status status;
 	napi_value fn;
-	status = napi_create_function(env, NULL, 0, StartPionScreenShare, NULL, &fn);
+	status = napi_create_function(env, NULL , 0, StartPionScreenShare, NULL, &fn);
 	if (status != napi_ok) {
 		napi_throw_error(env, NULL, "Unable to wrap native function");
 	}
