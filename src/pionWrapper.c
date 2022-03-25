@@ -27,7 +27,8 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 	GoSlice iceServersGo = {iceServers, iceServerLen, iceServerLen};
 
 	
-	char* SDPOffer = SpawnConnection(iceServersGo);
+	char* SDPOffer = malloc(BUFSIZE);
+	SDPOffer = SpawnConnection(iceServersGo);
 	napi_value mySDP;
 	status = napi_create_string_utf8(env, SDPOffer, NAPI_AUTO_LENGTH, &mySDP);
 	if (status != napi_ok) {
