@@ -24,7 +24,7 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 	}
 
 	int iceServerLen = strnlen(iceServers, BUFSIZE);
-	GoSlice iceServersGo = {iceServers, iceServerLen+1, iceServerLen};
+	GoSlice iceServersGo = {iceServers, iceServerLen, iceServerLen};
 
 	
 	char* SDPOffer = malloc(BUFSIZE);
