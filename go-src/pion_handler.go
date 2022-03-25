@@ -114,7 +114,9 @@ func SetRemoteDescription(remoteDescString JSONString) bool {
 	if err != nil {
 		return false
 	}
-	peerConnection.SetRemoteDescription(desc)
+  if err = peerConnection.SetRemoteDescription(desc); err != nil {
+    panic(err)
+  }
 	return true
 }
 
