@@ -23,12 +23,10 @@ napi_value StartPionScreenShare(napi_env env, napi_callback_info info) {
 		napi_throw_error(env, NULL, "Invalid string passed in as arg");
 	}
 
-	result += 1;
 	GoSlice iceServersGo = {iceServers, result, result};
 
 	
 	char* SDPOffer = SpawnConnection(iceServersGo);
-	printf("%s", SDPOffer);
 	napi_value mySDP;
 	status = napi_create_string_utf8(env, SDPOffer, NAPI_AUTO_LENGTH, &mySDP);
 	if (status != napi_ok) {
