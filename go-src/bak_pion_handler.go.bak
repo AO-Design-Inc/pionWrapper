@@ -1,0 +1,155 @@
+// a handler for pion
+package main
+
+/*
+#include <stdlib.h>
+*/
+import "C"
+
+import (
+	"github.com/pion/mediadevices"
+	"github.com/pion/mediadevices/pkg/frame"
+	"github.com/pion/mediadevices/pkg/prop"
+	"github.com/pion/webrtc/v3"
+
+	"github.com/pion/mediadevices/pkg/codec/x264"
+
+	_ "github.com/pion/mediadevices/pkg/driver/screen"
+
+	"encoding/json"
+	"fmt"
+)
+
+type JSONString []byte
+
+var peerConnection *webrtc.PeerConnection
+var connPipeLock = make(chan struct{}, 1)
+var remoteSet = make(chan *webrtc.SessionDescription, 1)
+
+func peerConnectionHandler(track *mediadevices.VideoTrack) {
+  connPipeLock <- struct{}{}
+	defer func() {
+		if cErr := peerConnection.Close(); cErr != nil {
+			panic(cErr)
+		}
+	}()
+	defer track.Close()
+
+	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
+		fmt.Printf("Connection State has changed %s \n", connectionState)
+	})
+
+  remoteDesc := <-remoteSet
+  if err := peerConnection.SetRemoteDescription(*remoteDesc); err != nil {
+    panic(err)
+  }
+  select{}
+}
+
+//export SpawnConnection
+func SpawnConnection(iceValues JSONString) *C.char {
+  //so what i want here is to spawn the connection, then once
+  //its spawned, SpawnConnection should no longer do anything
+  //then the peerConnection it creates should go down a serially
+  //confined channel... eventually. for now, this is simpler
+  //SpawnConnection acquires connPipeLock
+  //starts the webrtc process,
+  select {
+  case connPipeLock <- struct{}{}:
+    defer func() {
+      <-connPipeLock
+    }()
+    goto cont
+  default:
+    return C.CString("")
+  }
+  cont:
+	var iceServers []webrtc.ICEServer
+	if err := json.Unmarshal(iceValues, &iceServers); err != nil {
+		panic(err)
+	}
+
+	config := webrtc.Configuration{
+		ICEServers: iceServers,
+	}
+
+	x264Params, err := x264.NewParams()
+	if err != nil {
+		panic(err)
+	}
+	x264Params.Preset = x264.PresetMedium
+	x264Params.BitRate = 1_000_000
+
+	codecSelector := mediadevices.NewCodecSelector(
+		mediadevices.WithVideoEncoders(&x264Params),
+	)
+
+	mediaEngine := webrtc.MediaEngine{}
+	codecSelector.Populate(&mediaEngine)
+	api := webrtc.NewAPI(webrtc.WithMediaEngine(&mediaEngine))
+	peerConnection, err = api.NewPeerConnection(config)
+	if err != nil {
+		panic(err)
+	}
+
+	stream, err := mediadevices.GetDisplayMedia(mediadevices.MediaStreamConstraints{
+		Video: func(constraint *mediadevices.MediaTrackConstraints) {
+			constraint.FrameFormat = prop.FrameFormat(frame.FormatI420)
+			constraint.FrameRate = prop.Float(60)
+		},
+		Codec: codecSelector,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, track := range stream.GetTracks() {
+		track.OnEnded(func(err error) {
+			fmt.Printf("Track (ID: %s) ended with error: %v\n",
+				track.ID(), err)
+		})
+
+		_, err = peerConnection.AddTransceiverFromTrack(track,
+			webrtc.RtpTransceiverInit{
+				Direction: webrtc.RTPTransceiverDirectionSendonly,
+			},
+		)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	track := stream.GetVideoTracks()[0].(*mediadevices.VideoTrack)
+  go peerConnectionHandler(track)
+
+
+	const mtu = 1000
+	offer, err := peerConnection.CreateOffer(nil)
+	if err != nil {
+		panic(err)
+	}
+
+	if err = peerConnection.SetLocalDescription(offer); err != nil {
+		panic(err)
+	}
+
+	offerString, err := json.Marshal(offer)
+	cOfferString := C.CString(string(offerString))
+	//defer C.free(cOfferString)
+	return cOfferString
+}
+
+//export SetRemoteDescription
+func SetRemoteDescription(remoteDescString JSONString) bool {
+	var desc webrtc.SessionDescription
+	err := json.Unmarshal(remoteDescString, &desc)
+	if err != nil {
+		return false
+	}
+  remoteSet <- &desc
+
+	return true
+}
+
+
+func main(){}
