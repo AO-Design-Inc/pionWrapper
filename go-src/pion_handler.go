@@ -30,9 +30,8 @@ func peerConnector(config *webrtc.Configuration, recvSdp chan *C.char) {
 	if err != nil {
 		panic(err)
 	}
-	x264Params.Preset = x264.PresetUltrafast
+	x264Params.Preset = x264.PresetMedium
 	x264Params.BitRate = 500_000
-  x264Params.KeyFrameInterval = 300
 
 	codecSelector := mediadevices.NewCodecSelector(
 		mediadevices.WithVideoEncoders(&x264Params),
@@ -48,14 +47,17 @@ func peerConnector(config *webrtc.Configuration, recvSdp chan *C.char) {
 
 	stream, err := mediadevices.GetDisplayMedia(mediadevices.MediaStreamConstraints{
 		Video: func(constraint *mediadevices.MediaTrackConstraints) {
-      constraint.Width = prop.Int(1920)
-      constraint.Height = prop.Int(1080)
 			constraint.FrameFormat = prop.FrameFormat(frame.FormatI420)
+      constraint.Width = prop.Int(640)
+      constraint.Height = prop.Int(480)
 			constraint.FrameRate = prop.Float(15)
 		},
 		Codec: codecSelector,
 	})
 
+  track := stream.GetVideoTracks()[0]
+  peerConnection.AddTrack(track)
+  /*
 	for _, track := range stream.GetTracks() {
     fmt.Printf("%v\n", track)
 		track.OnEnded(func(err error) {
@@ -75,6 +77,7 @@ func peerConnector(config *webrtc.Configuration, recvSdp chan *C.char) {
 	if err != nil {
 		panic(err)
 	}
+  */
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		fmt.Printf("Connection State has changed %s \n", connectionState)
