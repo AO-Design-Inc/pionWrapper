@@ -13,7 +13,7 @@ import (
 	"github.com/pion/webrtc/v3"
 
 	//"github.com/pion/mediadevices/pkg/codec/vpx"
-	"github.com/pion/mediadevices/pkg/codec/x264"
+	"github.com/pion/mediadevices/pkg/codec/openh264"
 
 	_ "github.com/pion/mediadevices/pkg/driver/screen"
 
@@ -26,15 +26,14 @@ var peerConnection *webrtc.PeerConnection
 
 
 func peerConnector(config *webrtc.Configuration, recvSdp chan *C.char) {
-	x264Params, err := x264.NewParams()
+	h264Params, err := openh264.NewParams()
 	if err != nil {
 		panic(err)
 	}
-	x264Params.Preset = x264.PresetMedium
-	x264Params.BitRate = 500_000
+	h264Params.BitRate = 1_000_000
 
 	codecSelector := mediadevices.NewCodecSelector(
-		mediadevices.WithVideoEncoders(&x264Params),
+		mediadevices.WithVideoEncoders(&h264Params),
 	)
 
 	mediaEngine := webrtc.MediaEngine{}
@@ -48,16 +47,13 @@ func peerConnector(config *webrtc.Configuration, recvSdp chan *C.char) {
 	stream, err := mediadevices.GetDisplayMedia(mediadevices.MediaStreamConstraints{
 		Video: func(constraint *mediadevices.MediaTrackConstraints) {
 			constraint.FrameFormat = prop.FrameFormat(frame.FormatI420)
-      constraint.Width = prop.Int(640)
-      constraint.Height = prop.Int(480)
-			constraint.FrameRate = prop.Float(15)
+			constraint.FrameRate = prop.Float(60)
+      constraint.Width = prop.Int(1920)
+      constraint.Height = prop.Int(1080)
 		},
 		Codec: codecSelector,
 	})
 
-  track := stream.GetVideoTracks()[0]
-  peerConnection.AddTrack(track)
-  /*
 	for _, track := range stream.GetTracks() {
     fmt.Printf("%v\n", track)
 		track.OnEnded(func(err error) {
@@ -77,12 +73,10 @@ func peerConnector(config *webrtc.Configuration, recvSdp chan *C.char) {
 	if err != nil {
 		panic(err)
 	}
-  */
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		fmt.Printf("Connection State has changed %s \n", connectionState)
 	})
-	const mtu = 1400
 	offer, err := peerConnection.CreateOffer(nil)
 	if err != nil {
 		panic(err)
@@ -97,7 +91,6 @@ func peerConnector(config *webrtc.Configuration, recvSdp chan *C.char) {
 	offerString, err := json.Marshal(*peerConnection.LocalDescription())
 	cOfferString := C.CString(string(offerString))
 	recvSdp <- cOfferString
-  select {}
 }
 
 //export SpawnConnection
@@ -124,19 +117,24 @@ func SetRemoteDescription(remoteDescString JSONString) bool {
 	if err := json.Unmarshal(remoteDescString, &desc); err != nil {
 		return false
 	}
-  go remoteSetter(&desc)
+  //go remoteSetter(&desc)
+	gatherComplete := webrtc.GatheringCompletePromise(peerConnection)
+	<-gatherComplete
+	if err := peerConnection.SetRemoteDescription(desc); err != nil {
+		panic(err)
+	}
 	return true
 }
 
+/*
 func remoteSetter(desc *webrtc.SessionDescription) {
 	gatherComplete := webrtc.GatheringCompletePromise(peerConnection)
 	<-gatherComplete
 	if err := peerConnection.SetRemoteDescription(*desc); err != nil {
 		panic(err)
 	}
-
-  select {}
 }
+*/
 
 
 func main() {}
