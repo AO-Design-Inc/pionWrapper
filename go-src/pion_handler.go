@@ -30,7 +30,7 @@ func peerConnector(config *webrtc.Configuration, recvSdp chan *C.char) {
 		panic(err)
 	}
 	x264Params.Preset = x264.PresetMedium
-	x264Params.BitRate = 1_000_000
+	x264Params.BitRate = 10_000_000
 
 	codecSelector := mediadevices.NewCodecSelector(
 		mediadevices.WithVideoEncoders(&x264Params),
@@ -77,7 +77,7 @@ func peerConnector(config *webrtc.Configuration, recvSdp chan *C.char) {
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		fmt.Printf("Connection State has changed %s \n", connectionState)
 	})
-	const mtu = 1000
+	const mtu = 1400
 	offer, err := peerConnection.CreateOffer(nil)
 	if err != nil {
 		panic(err)
@@ -124,6 +124,8 @@ func SetRemoteDescription(remoteDescString JSONString) bool {
 }
 
 func remoteSetter(desc *webrtc.SessionDescription) {
+	gatherComplete := webrtc.GatheringCompletePromise(peerConnection)
+	<-gatherComplete
 	if err := peerConnection.SetRemoteDescription(*desc); err != nil {
 		panic(err)
 	}
